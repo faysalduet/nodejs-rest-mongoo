@@ -4,11 +4,11 @@ const router = express.Router();
 const multer = require("multer");
 const checkAuth = require("../middleware/check-auth");
 
-const ProductsController = require("../controllers/products");
+const CategoriesController = require("../controllers/categories");
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, "./uploads/products/");
+    cb(null, "./uploads/categories/");
   },
   filename: function(req, file, cb) {
     cb(null, Date.now() + file.originalname);
@@ -30,27 +30,28 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-router.get("/", checkAuth, ProductsController.products_get_all);
+router.get("/", checkAuth, CategoriesController.categories_get_all);
 
 router.post(
   "/",
   checkAuth,
-  upload.single("productImage"),
-  ProductsController.products_create_product
+  upload.single("categoryImage"),
+  CategoriesController.categories_create_category
 );
 
-router.get("/:productId", checkAuth, ProductsController.products_get_by_id);
+
+router.get("/:categoryId", checkAuth, CategoriesController.categories_get_by_id);
 
 router.patch(
-  "/:productId",
+  "/:categoryId",
   checkAuth,
-  ProductsController.products_update_product
+  CategoriesController.categories_update_category
 );
 
 router.delete(
-  "/:productId",
+  "/:categoryId",
   checkAuth,
-  ProductsController.products_delete_by_id
+  CategoriesController.categories_delete_by_id
 );
 
 module.exports = router;

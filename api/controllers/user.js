@@ -16,6 +16,7 @@ exports.user_signup = (req, res, next) => {
           // Store hash in your password DB.
           if (err) {
             return res.status(500).json({
+              success: false,
               error: err
             });
           } else {
@@ -30,12 +31,14 @@ exports.user_signup = (req, res, next) => {
               .then(result => {
                 console.log(result);
                 res.status(201).json({
-                  message: "User created"
+                  message: "User created",
+                  success: true,
                 });
               })
               .catch(err => {
                 console.log(err);
                 res.status(500).json({
+                  success: false,
                   error: err
                 });
               });
@@ -69,12 +72,14 @@ exports.user_login = (req, res, next) => {
             }
           );
           return res.status(200).json({
+            success: true,
             message: "Auth successfull",
             id: user[0]._id,
             token: token
           });
         } else {
           return res.status(401).json({
+            success: false,
             message: "Login fail"
           });
         }

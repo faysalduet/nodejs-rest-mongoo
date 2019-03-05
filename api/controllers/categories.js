@@ -1,39 +1,30 @@
 const mongoose = require("mongoose");
-const Product = require("../models/product");
-const slugify = require('slugify');
 var fs = require('fs');
+const Category = require("../models/category");
 
 
-exports.products_get_all = (req, res, next) => {
-  Product.find() 
-    .select("category brand user _id  name slug description price offerPrice productImage status  updatedDate createdDate ")
-    .populate("category", "_id name")
-    .populate("brand", "_id name")
-    .populate("user", "_id email firstname lastname")
+exports.categories_get_all = (req, res, next) => {
+  Category.find()   
+   
     .exec()
     .then(result => {
       const response = {
         count: result.length,
-        message: "Get all product",
+        message: "Get all categories",
         success: true,
         data: result.map(result => {
           return {           
             _id:result._id,
             name:result.name,
-            slug:result.slug,
             description:result.description,
-            price:result.price,
-            offerPrice:result.offerPrice,          
-            category:result.category,
-            brand:result.brand,
-            productImage:result.productImage,
-            status:result.status,
-            user:result.user,
+            parentId:result.parentId,
+            categoryImage:result.categoryImage,
+            status:result.status,            
             updateDate:result.updatedDate,
             createdDate:result.createdDate,
             request: {
               type: "GET",
-              url: process.env.SERVER_URL+"products/" + result._id
+              url: process.env.SERVER_URL+"categories/" + result._id
             }
           };
         })
@@ -50,36 +41,29 @@ exports.products_get_all = (req, res, next) => {
     });
 };
 
-exports.products_create_product = (req, res, next) => {
+exports.categories_create_category = (req, res, next) => {
   console.log(req.file);
 
-  let slug = (req.body.slug)? req.body.slug: slugify(req.body.name);
-  const product = new Product({
+  
+  const category = new Category({
     _id: new mongoose.Types.ObjectId(),
     name: req.body.name,
-    price: req.body.price,
-    offerPrice: req.body.offerPrice,
     description: req.body.description,
-    category: req.body.categoryId,
-    brand: req.body.brandId,
-    user: req.body.userId,
-    productImage: req.file.path,
-    slug: slug,
-    status:req.body.status,
-    quantity:req.body.quantity
-    
+    parentId: req.body.parentId,   
+    categoryImage: req.file.path,   
+    status: req.body.status
   });
-  product
+  category
     .save()
     .then(result => {
       console.log(result);
       res.status(201).json({
-        message: "Product created successfully",
+        message: "Category created successfully",
         success: true,
         data:result,
         request: {
           type: "GET",
-          url: process.env.SERVER_URL + "products/" + result._id
+          url: process.env.SERVER_URL + "categories/" + result._id
         }
       });
     })
@@ -93,13 +77,11 @@ exports.products_create_product = (req, res, next) => {
     });
 };
 
-exports.products_get_by_id = (req, res, next) => {
-  const id = req.params.productId;
-  Product.findById(id)
-    .select("category brand user _id  name slug description price offerPrice productImage status  updatedDate createdDate ")
-    .populate("category", "_id name")
-    .populate("brand", "_id name")
-    .populate("user", "_id email firstname lastname")
+
+exports.categories_get_by_id = (req, res, next) => {
+  const id = req.params.categoryId;
+  Category.findById(id)
+    
     .exec()
     .then(result => {
       console.log(result);
@@ -109,13 +91,13 @@ exports.products_get_by_id = (req, res, next) => {
           data: result,
           request: {
             type: "GET",
-            url: process.env.SERVER_URL + "products/"
+            url: process.env.SERVER_URL + "categories/"
           }
         });
       } else {
         res.status(404).json({
           success: false,
-          message: "There is no valid entry found",         
+          message: "There is no valid entry found",            
         });
       }
     })
@@ -124,27 +106,27 @@ exports.products_get_by_id = (req, res, next) => {
       res.status(500).json({
         success: false,
         message: "Internal server error",
-        error: err 
+        details: err 
       });
     });
 };
 
-exports.products_update_product = (req, res, next) => {
-  const id = req.params.productId;
+exports.categories_update_category = (req, res, next) => {
+  const id = req.params.categoryId;
 
   const updateOps = {};
   for (const ops of req.body) {
     updateOps[ops.propName] = ops.value;
   }
-  Product.updateOne({ _id: id }, { $set: updateOps })
+  Category.updateOne({ _id: id }, { $set: updateOps })
     .exec()
     .then(result => {
       res.status(200).json({
         success: true,
-        message: "Product updated successfully",       
+        message: "Category updated successfully",       
         request: {
           type: "GET",
-          url: process.env.SERVER_URL + "products/" + id
+          url: process.env.SERVER_URL + "categories/" + id
         }
       });
     })
@@ -152,33 +134,34 @@ exports.products_update_product = (req, res, next) => {
       res.status(500).json({ 
         success: false,
         message: "Internal server error",
-        error: err 
+        details: err 
       });
     });
 };
 
-exports.products_delete_by_id = (req, res, next) => {
-    
-  Product.findById(req.params.productId)    
+exports.categories_delete_by_id = (req, res, next) => {
+  
+  Category.findById(req.params.categoryId)    
     .exec()
     .then(doc => {
-      if (doc) {        
-        Product.deleteOne({ _id: req.params.productId })
+
+      if (doc) {
+        Category.deleteOne({ _id: req.params.categoryId })
         .exec()
         .then(result => {
-          if (fs.existsSync(doc.productImage)) {
-            fs.unlink(doc.productImage, function (err) {
+         
+          if (fs.existsSync(doc.categoryImage)) {
+            fs.unlink(doc.categoryImage, function (err) {
               console.log('File deleted!');
             });
           }
-         
           res.status(200).json({
             success: true,
-            message: "Product deleted succesfully",
+            message: "Category deleted succesfully",
             request: {
               type: "POST",
-              url: process.env.SERVER_URL + "products/",
-              body: { name: "String", price: "Number", "..":".." }
+              url: process.env.SERVER_URL + "categories/",
+              body: { name: "String", description: "String", "..":".." }
             }
           });
         })
@@ -191,12 +174,12 @@ exports.products_delete_by_id = (req, res, next) => {
         });
       }else{
         res.status(500).json({ 
-          success: false,
-          message: "There is no valid entry found to delete",   
-           
+          error:true,
+          message: "There is no valid entry found to delete",            
         });
       }
-    }).catch(err => {
+     
+    }).catch(err =>{
       res.status(500).json({ 
         success: false,
         message: "Internal server error",
@@ -204,5 +187,5 @@ exports.products_delete_by_id = (req, res, next) => {
       });
     });
 
-    
+ 
 };
