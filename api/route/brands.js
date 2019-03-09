@@ -35,7 +35,7 @@ router.get("/", checkAuth, BrandsController.brands_get_all);
 router.post(
   "/",
   checkAuth,
-  upload.single("brandImage"),
+  upload.single("image"),
   BrandsController.brands_create_brand
 );
 
@@ -45,6 +45,7 @@ router.get("/:brandId", checkAuth, BrandsController.brands_get_by_id);
 router.patch(
   "/:brandId",
   checkAuth,
+  upload.single("image"),
   BrandsController.brands_update_brand
 );
 

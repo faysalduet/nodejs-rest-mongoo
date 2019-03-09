@@ -28,7 +28,7 @@ const productSchema = mongoose.Schema(
     description: { type: String ,  default: null},
     price: { type: Number, required: true },
     offerPrice: { type: Number,  default: null },
-    productImage: { type: String, required: true },   
+    image: { type: String, required: true },   
     quantity:  { type: Number, default: 1 },
     status: {type: Number, default: 0},
     createdDate: { type: Date, default: Date.now },

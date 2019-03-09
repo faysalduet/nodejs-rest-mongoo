@@ -35,7 +35,7 @@ router.get("/", checkAuth, ProductsController.products_get_all);
 router.post(
   "/",
   checkAuth,
-  upload.single("productImage"),
+  upload.single("image"),
   ProductsController.products_create_product
 );
 
@@ -44,6 +44,7 @@ router.get("/:productId", checkAuth, ProductsController.products_get_by_id);
 router.patch(
   "/:productId",
   checkAuth,
+  upload.single("image"),
   ProductsController.products_update_product
 );
 

@@ -18,7 +18,7 @@ exports.brands_get_all = (req, res, next) => {
             name:result.name,
             description:result.description,
             parentId:result.parentId,
-            brandImage:result.brandImage,
+            image:result.image,
             status:result.status,            
             updateDate:result.updatedDate,
             createdDate:result.createdDate,
@@ -50,7 +50,7 @@ exports.brands_create_brand = (req, res, next) => {
     name: req.body.name,
     description: req.body.description,
     parentId: req.body.parentId,   
-    brandImage: req.file.path,   
+    image: req.file.path,   
     status: req.body.status
   });
   brand
@@ -114,29 +114,59 @@ exports.brands_get_by_id = (req, res, next) => {
 exports.brands_update_brand = (req, res, next) => {
   const id = req.params.brandId;
 
-  const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
-  Brand.updateOne({ _id: id }, { $set: updateOps })
-    .exec()
-    .then(result => {
-      res.status(200).json({
-        success:true,
-        message: "Brand updated successfully",       
-        request: {
-          type: "GET",
-          url: process.env.SERVER_URL + "brands/" + id
+  Brand.findById(id).exec().then(doc => {
+    if(doc){
+
+      const updateOps ={
+        name: (req.body.name)? req.body.name: doc.name,
+        description: (req.body.description)? req.body.description: doc.description,
+        parentId: (req.body.parentId)? req.body.parentId: doc.parentId,
+        image: (req.file.path)? req.file.path: doc.image,
+        status: (req.body.status)? req.body.status: doc.status
+      };
+      Brand.updateOne({ _id: id }, { $set: updateOps })
+      .exec()
+      .then(result =>{
+        console.log('File path!' + req.file.path);
+        console.log('existing File path!' + doc.image);
+        if ( req.file.path && fs.existsSync(doc.image)) {
+          fs.unlink(doc.image, function (err) {
+            console.log('File deleted!');
+          });
         }
+
+        res.status(200).json({
+          message: "Brand updated successfully",
+          success: true,        
+          request: {
+            type: "GET",
+            url: process.env.SERVER_URL + "brands/" + result._id
+          }
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+          error: err 
+        });
       });
-    })
-    .catch(err => {
-      res.status(500).json({ 
+    }else{
+      res.status(404).json({
         success: false,
-        message: "Internal server error",
-        error: err 
+        message: "There is no valid entry found to update",                  
       });
+    }
+  }).catch(err => {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: err 
     });
+  });
+
 };
 
 exports.brands_delete_by_id = (req, res, next) => {
@@ -150,8 +180,8 @@ exports.brands_delete_by_id = (req, res, next) => {
         .exec()
         .then(result => {
          
-          if (fs.existsSync(doc.brandImage)) {
-            fs.unlink(doc.brandImage, function (err) {
+          if (fs.existsSync(doc.image)) {
+            fs.unlink(doc.image, function (err) {
               console.log('File deleted!');
             });
           }

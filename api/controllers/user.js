@@ -9,6 +9,7 @@ exports.user_signup = (req, res, next) => {
     .then(user => {
       if (user.length >= 1) {
         return res.status(409).json({
+          success: false,
           message: "Mail exists"
         });
       } else {
@@ -23,6 +24,8 @@ exports.user_signup = (req, res, next) => {
             const user = new User({
               _id: new mongoose.Types.ObjectId(),
               email: req.body.email,
+              firstname: req.body.firstname,
+              lastname: req.body.lastname,
               password: hash
             });
 

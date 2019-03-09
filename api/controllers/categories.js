@@ -18,7 +18,7 @@ exports.categories_get_all = (req, res, next) => {
             name:result.name,
             description:result.description,
             parentId:result.parentId,
-            categoryImage:result.categoryImage,
+            image:result.image,
             status:result.status,            
             updateDate:result.updatedDate,
             createdDate:result.createdDate,
@@ -50,7 +50,7 @@ exports.categories_create_category = (req, res, next) => {
     name: req.body.name,
     description: req.body.description,
     parentId: req.body.parentId,   
-    categoryImage: req.file.path,   
+    image: req.file.path,   
     status: req.body.status
   });
   category
@@ -112,31 +112,63 @@ exports.categories_get_by_id = (req, res, next) => {
 };
 
 exports.categories_update_category = (req, res, next) => {
-  const id = req.params.categoryId;
-
-  const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
-  Category.updateOne({ _id: id }, { $set: updateOps })
-    .exec()
-    .then(result => {
-      res.status(200).json({
-        success: true,
-        message: "Category updated successfully",       
-        request: {
-          type: "GET",
-          url: process.env.SERVER_URL + "categories/" + id
+  
+  
+  Category.findById(req.params.categoryId)    
+  .exec()
+  .then(doc => {
+    if(doc){
+      const updateOps = {   
+        name: (req.body.name)? req.body.name: doc.name,
+        description: (req.body.description)? req.body.description: doc.name ,
+        parentId: (req.body.parentId)? req.body.parentId: doc.parentId ,
+        image: (req.file.path)? req.file.path: doc.image , 
+        status: (req.body.status)? req.body.status: doc.status,
+        updateDate: Date.now
+      };  
+  
+      Category.updateOne({ _id: req.params.categoryId }, { $set: updateOps })
+      .exec()
+      .then(result => {
+        console.log('File path!' + req.file.path);
+        console.log('existing File path!' + doc.image);
+        if ( req.file.path && fs.existsSync(doc.image)) {
+          fs.unlink(doc.image, function (err) {
+            console.log('File deleted!');
+          });
         }
+        res.status(200).json({
+          message: "Category updated successfully",
+          success: true,        
+          request: {
+            type: "GET",
+            url: process.env.SERVER_URL + "categories/" + result._id
+          }
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+          error: err 
+        });
       });
-    })
-    .catch(err => {
-      res.status(500).json({ 
+    }else{      
+      res.status(404).json({
         success: false,
-        message: "Internal server error",
-        details: err 
+        message: "There is no valid entry found to update",                  
       });
+    }        
+  })
+  .catch(err => {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: err 
     });
+  });
 };
 
 exports.categories_delete_by_id = (req, res, next) => {
@@ -150,8 +182,8 @@ exports.categories_delete_by_id = (req, res, next) => {
         .exec()
         .then(result => {
          
-          if (fs.existsSync(doc.categoryImage)) {
-            fs.unlink(doc.categoryImage, function (err) {
+          if (fs.existsSync(doc.image)) {
+            fs.unlink(doc.image, function (err) {
               console.log('File deleted!');
             });
           }
@@ -173,7 +205,7 @@ exports.categories_delete_by_id = (req, res, next) => {
           });
         });
       }else{
-        res.status(500).json({ 
+        res.status(404).json({ 
           error:true,
           message: "There is no valid entry found to delete",            
         });

@@ -6,7 +6,7 @@ const brandSchema = mongoose.Schema(
     
     name: { type: String, required: true },   
     description: { type: String ,  default: null},
-    brandImage: { type: String, default: null },   
+    image: { type: String, default: null },   
 
     status: {type: Number, default: 0},
     createdDate: { type: Date, default: Date.now },

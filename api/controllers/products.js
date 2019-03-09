@@ -6,7 +6,7 @@ var fs = require('fs');
 
 exports.products_get_all = (req, res, next) => {
   Product.find() 
-    .select("category brand user _id  name slug description price offerPrice productImage status  updatedDate createdDate ")
+    .select("category brand user _id  name slug description price offerPrice image status  updatedDate createdDate ")
     .populate("category", "_id name")
     .populate("brand", "_id name")
     .populate("user", "_id email firstname lastname")
@@ -26,7 +26,7 @@ exports.products_get_all = (req, res, next) => {
             offerPrice:result.offerPrice,          
             category:result.category,
             brand:result.brand,
-            productImage:result.productImage,
+            image:result.image,
             status:result.status,
             user:result.user,
             updateDate:result.updatedDate,
@@ -63,7 +63,7 @@ exports.products_create_product = (req, res, next) => {
     category: req.body.categoryId,
     brand: req.body.brandId,
     user: req.body.userId,
-    productImage: req.file.path,
+    image: req.file.path,
     slug: slug,
     status:req.body.status,
     quantity:req.body.quantity
@@ -96,7 +96,7 @@ exports.products_create_product = (req, res, next) => {
 exports.products_get_by_id = (req, res, next) => {
   const id = req.params.productId;
   Product.findById(id)
-    .select("category brand user _id  name slug description price offerPrice productImage status  updatedDate createdDate ")
+    .select("category brand user _id  name slug description price offerPrice image status  updatedDate createdDate ")
     .populate("category", "_id name")
     .populate("brand", "_id name")
     .populate("user", "_id email firstname lastname")
@@ -132,42 +132,83 @@ exports.products_get_by_id = (req, res, next) => {
 exports.products_update_product = (req, res, next) => {
   const id = req.params.productId;
 
-  const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
-  Product.updateOne({ _id: id }, { $set: updateOps })
-    .exec()
-    .then(result => {
-      res.status(200).json({
-        success: true,
-        message: "Product updated successfully",       
-        request: {
-          type: "GET",
-          url: process.env.SERVER_URL + "products/" + id
+  Product.findById(id).exec().then(doc => {
+    if(doc){      
+
+      console.log(doc);
+      const updateOps = {  
+        name: (req.body.name)? req.body.name: doc.name,
+        price: (req.body.price)? req.body.price: doc.price,
+        offerPrice: (req.body.offerPrice)?req.body.offerPrice: doc.offerPrice,
+        description: (req.body.description)? req.body.description: doc.name ,
+        category: (req.body.categoryId)?req.body.categoryId: doc.categoryId ,
+        brand: (req.body.brandId)?req.body.brandId: doc.brandId ,
+        user: (req.body.userId)?req.body.userId: doc.userId ,
+        image: (req.file.path)? req.file.path: doc.image , 
+        slug: (req.body.slug)?req.body.slug: doc.slug ,
+        status: (req.body.status)? req.body.status: doc.status,
+        quantity:(req.body.quantity)? req.body.quantity: doc.quantity
+      };
+
+      
+      Product.updateOne({ _id: id }, { $set: updateOps })
+      .exec()
+      .then(result => {
+        console.log('File path!' + req.file.path);
+        console.log('existing File path!' + doc.image);
+        if ( req.file.path && fs.existsSync(doc.image)) {
+          fs.unlink(doc.image, function (err) {
+            console.log('File deleted!');
+          });
         }
+        res.status(200).json({
+          message: "Product updated successfully",
+          success: true,        
+          request: {
+            type: "GET",
+            url: process.env.SERVER_URL + "products/" + result._id
+          }
+        });
+      })
+      .catch(err => {
+        console.log(err);
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+          error: err 
+        });
       });
-    })
-    .catch(err => {
-      res.status(500).json({ 
+
+    }else{
+      res.status(404).json({
         success: false,
-        message: "Internal server error",
-        error: err 
+        message: "There is no valid entry found to update",                  
       });
+    }
+
+  }).catch(err => {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: err 
     });
+  });
+
 };
 
 exports.products_delete_by_id = (req, res, next) => {
     
-  Product.findById(req.params.productId)    
+  const id = req.params.productId;
+  Product.findById(id)    
     .exec()
     .then(doc => {
       if (doc) {        
-        Product.deleteOne({ _id: req.params.productId })
+        Product.deleteOne({ _id: id })
         .exec()
         .then(result => {
-          if (fs.existsSync(doc.productImage)) {
-            fs.unlink(doc.productImage, function (err) {
+          if (fs.existsSync(doc.image)) {
+            fs.unlink(doc.image, function (err) {
               console.log('File deleted!');
             });
           }

@@ -35,7 +35,7 @@ router.get("/", checkAuth, CategoriesController.categories_get_all);
 router.post(
   "/",
   checkAuth,
-  upload.single("categoryImage"),
+  upload.single("image"),
   CategoriesController.categories_create_category
 );
 
@@ -44,7 +44,7 @@ router.get("/:categoryId", checkAuth, CategoriesController.categories_get_by_id)
 
 router.patch(
   "/:categoryId",
-  checkAuth,
+  checkAuth, upload.single("image"),
   CategoriesController.categories_update_category
 );
 
