@@ -18,7 +18,7 @@ pipeline {
         }
         stage("Deploy"){
             steps {
-                echo "Deploy successfully using jenkins"
+                echo "Deploy successfully using jenkins Edited"
             }
         }
     }
