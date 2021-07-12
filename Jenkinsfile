@@ -13,7 +13,7 @@ pipeline {
         }
         stage("Quality-Gate"){
             steps {
-                echo "Quality-Gate senar successfully"
+                echo "Quality-Gate senar successfully edited"
             }
         }
         stage("Deploy"){
